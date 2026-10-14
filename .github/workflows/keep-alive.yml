@@ -1,0 +1,20 @@
+# מפעיל פעם בשעה את הנודניק, וגם שומר על פרויקט Supabase פעיל (מונע השהיה)
+name: nudge-and-keep-alive
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase function
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ANON: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ub3djdnVsd3ZyZWt5Y3ZodWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NzQ0NjQsImV4cCI6MjEwNzU1MDQ2NH0.4iVA1iQzj06rF4aM0mIixmq7fnbbI7ViZlSxSaj40mA
+        run: |
+          curl -sS -f -X POST "https://mnowcvulwvrekycvhuer.supabase.co/functions/v1/api" \
+            -H "Content-Type: application/json" \
+            -H "apikey: $ANON" -H "Authorization: Bearer $ANON" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -d '{"action":"cron"}'
