@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מומחה התזונה</title>
+<meta name="theme-color" content="#4E6B2A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="מומחה התזונה">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+/* Layout: one-screen phone app; the chat is the home screen, other screens slide over it. */
+:root{
+  --bg:#F2F4EC; --surface:#FFFFFF; --sunk:#E6EADD; --line:#D5DBC8;
+  --fg:#1F2618; --muted:#5E6A52; --accent:#4E6B2A; --accent-fg:#FFFFFF;
+  --accent-soft:#DCE6C9; --bubble-me:#4E6B2A; --bubble-me-fg:#FFFFFF;
+  --warn:#A8641A; --bad:#A33A2C; --good:#3D7A3A;
+  --display:"Secular One","Assistant",system-ui,sans-serif;
+  --body:"Assistant",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12160F; --surface:#1B2117; --sunk:#232B1E; --line:#313B29;
+  --fg:#E8EDDF; --muted:#9DA98F; --accent:#9DBF6A; --accent-fg:#14190F;
+  --accent-soft:#2C3A1F; --bubble-me:#3E5622; --bubble-me-fg:#F1F5E9;
+  --warn:#E0A257; --bad:#E07A6A; --good:#8CCB7E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12160F; --surface:#1B2117; --sunk:#232B1E; --line:#313B29;
+  --fg:#E8EDDF; --muted:#9DA98F; --accent:#9DBF6A; --accent-fg:#14190F;
+  --accent-soft:#2C3A1F; --bubble-me:#3E5622; --bubble-me-fg:#F1F5E9;
+  --warn:#E0A257; --bad:#E07A6A; --good:#8CCB7E; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
+#app{height:100%;display:flex;flex-direction:column;max-width:640px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:1.9rem;line-height:1.15} h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:0;border-radius:999px;padding:.6rem 1.15rem;background:var(--accent);color:var(--accent-fg);font-weight:700}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.quiet{background:var(--sunk);color:var(--fg)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.sm{padding:.35rem .8rem;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.field label{font-size:.85rem;color:var(--muted);font-weight:600}
+.field input,.field select,.field textarea{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:.6rem .75rem;min-width:0}
+.row{display:flex;gap:.75rem;flex-wrap:wrap}.row>*{flex:1 1 140px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:1rem}
+.err{color:var(--bad);font-size:.9rem;min-height:1.2em}
+.note{font-size:.85rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem}
+.chip{display:inline-flex;align-items:center;gap:.3rem;border-radius:999px;padding:.15rem .6rem;font-size:.8rem;font-weight:700;background:var(--sunk);color:var(--muted)}
+.chip.good{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.num{font-variant-numeric:tabular-nums}
+.proto{font-size:.8rem;background:var(--accent-soft);color:var(--fg);border-radius:10px;padding:.5rem .75rem}
+
+/* auth */
+.auth{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.5rem;padding-block:2rem;overflow:auto}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand svg{width:44px;height:44px;flex:none}
+.tag{color:var(--muted);font-size:1.05rem}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:.5rem;padding-block:.75rem;border-bottom:1px solid var(--line)}
+.top h2{flex:1;font-size:1.25rem;display:flex;align-items:center;gap:.5rem;min-width:0}
+.top h2 small{font-family:var(--body);font-size:.8rem;color:var(--muted);font-weight:600}
+.icon{border:0;background:var(--sunk);color:var(--fg);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;flex:none}
+.icon svg{width:22px;height:22px}
+
+/* chat */
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.6rem;padding-block:1rem}
+.b{max-width:85%;padding:.6rem .85rem;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.b.me{align-self:flex-start;background:var(--bubble-me);color:var(--bubble-me-fg);border-bottom-right-radius:4px}
+.b.ai{align-self:flex-end;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.b.sys{align-self:center;background:transparent;color:var(--muted);font-size:.85rem;text-align:center}
+.b.nudge{border-color:var(--accent);background:var(--accent-soft)}
+.b img{display:block;border-radius:10px;margin-bottom:.4rem;max-height:220px}
+.b .who{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:.15rem}
+.logged{display:block;margin-top:.4rem;font-size:.8rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:.3rem}
+.quick{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.5rem}
+.quick button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:.3rem .8rem;font-size:.9rem}
+.composer{display:flex;gap:.5rem;align-items:flex-end;padding-block:.6rem calc(.6rem + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.composer textarea{flex:1;min-width:0;resize:none;border:1.5px solid var(--line);border-radius:20px;padding:.55rem .9rem;background:var(--surface);max-height:120px}
+.weigh{border:0;border-radius:12px;height:40px;padding:0 .7rem;background:var(--accent-soft);color:var(--fg);font-weight:700;display:flex;align-items:center;gap:.3rem;flex:none}
+.weigh svg{width:20px;height:20px}
+.pending{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--muted)}
+.pending img{width:48px;height:48px;object-fit:cover;border-radius:8px}
+
+/* screens */
+.screen{flex:1;overflow-y:auto;padding-block:1rem 2rem;display:flex;flex-direction:column;gap:1rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.7rem}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:1.5rem;line-height:1.2}
+.stat span{font-size:.8rem;color:var(--muted)}
+.bar{height:10px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.chart{width:100%;height:auto;display:block}
+.goals{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.goals div{background:var(--sunk);border-radius:12px;padding:.6rem}
+.goals b{display:block;font-size:1.1rem}
+.goals span{font-size:.8rem;color:var(--muted)}
+.days{display:flex;gap:.35rem;flex-wrap:wrap}
+.days label{display:inline-flex}
+.days input{position:absolute;opacity:0;pointer-events:none}
+.days span{border:1.5px solid var(--line);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;font-weight:700;cursor:pointer}
+.days input:checked+span{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.days input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.persona{display:grid;gap:.5rem}
+.persona label{display:flex;gap:.6rem;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:.6rem .75rem;cursor:pointer;background:var(--surface)}
+.persona label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.persona b{display:block}.persona small{color:var(--muted)}
+.ulist{display:flex;flex-direction:column;gap:.6rem}
+.urow{display:flex;flex-direction:column;gap:.5rem}
+.urow .head{display:flex;justify-content:space-between;gap:.5rem;align-items:center;flex-wrap:wrap}
+.urow .acts{display:flex;gap:.4rem;flex-wrap:wrap}
+.code{font-family:ui-monospace,Menlo,monospace;background:var(--sunk);padding:.4rem .6rem;border-radius:8px;direction:ltr;display:inline-block;user-select:all}
+.models li{display:flex;justify-content:space-between;gap:.5rem;padding:.35rem 0;border-bottom:1px solid var(--line)}
+.models{list-style:none;margin:0;padding:0}
+.sheet-bg{position:fixed;inset:0;background:color-mix(in srgb,#000 45%,transparent);display:flex;align-items:flex-end;justify-content:center;z-index:5}
+.sheet{background:var(--surface);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:1.25rem max(16px,env(safe-area-inset-right,0px)) calc(1.25rem + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:1rem}
+.sheet .acts{display:flex;gap:.5rem;justify-content:flex-start}
+@media (prefers-reduced-motion:no-preference){.b{animation:pop .18s ease-out}@keyframes pop{from{transform:translateY(4px);opacity:.4}}}
+
+</style>
+</head>
+<body>
+<div id="app" dir="rtl" lang="he"></div>
+<input type="file" id="photoInput" accept="image/*" hidden>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== nutrition-coach · production client (Supabase) ===== */
+const SB_URL='https://mnowcvulwvrekycvhuer.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ub3djdnVsd3ZyZWt5Y3ZodWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NzQ0NjQsImV4cCI6MjEwNzU1MDQ2NH0.4iVA1iQzj06rF4aM0mIixmq7fnbbI7ViZlSxSaj40mA';
+const EMAIL_DOMAIN='users.nutrition-coach.app';
+const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const app=$('#app');
+const PERSONAS={encouraging:['מעודד','חם ותומך, חוגג כל הצלחה קטנה'],direct:['ישיר','קצר, ענייני ובלי סיבובים'],coach:['קשוח-ספורטיבי','דוחף קדימה כמו מאמן, עם הומור']};
+const DAYN=['א','ב','ג','ד','ה','ו','ש'];
+const fmtD=t=>new Date(t).toLocaleDateString('he-IL',{day:'numeric',month:'numeric'});
+const fmtFull=t=>new Date(t).toLocaleDateString('he-IL');
+function bmiCat(b){if(b<18.5)return['תת-משקל','warn'];if(b<25)return['תקין','good'];if(b<30)return['עודף משקל','warn'];return['השמנה','bad']}
+const I={
+  leaf:'<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" fill="var(--accent-soft)"/><path d="M14 33c0-11 8-19 21-19-1 12-8 20-19 20" fill="var(--accent)"/><path d="M14 34l12-11" stroke="var(--surface)" stroke-width="2.5" stroke-linecap="round"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16l4-5 3 3 5-7"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" transform="scale(-1,1) translate(-24,0)"/></svg>',
+  scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 9a4 4 0 0 1 8 0M12 9l1.5-2"/></svg>'
+};
+
+/* ---------- state ---------- */
+let ME=null,VIEW='chat',MSGS=[],WEIGHTS=[],GOAL=null,PHOTO_URLS={};
+const lastW=()=>WEIGHTS.length?WEIGHTS[WEIGHTS.length-1]:null;
+const bmi=()=>{const w=lastW();if(!w||!ME?.height_cm)return null;const h=ME.height_cm/100;return w.kg/(h*h)};
+
+async function api(action,body={}){
+  const {data,error}=await sb.functions.invoke('api',{body:{action,...body}});
+  if(error){let msg='אין חיבור לשרת. בדוק את האינטרנט ונסה שוב.';
+    try{const j=await error.context?.json?.();if(j?.error)msg=j.error}catch(e){}
+    throw new Error(msg)}
+  return data;
+}
+function busyScreen(t='טוען...'){app.innerHTML=`<div class="auth"><div class="brand">${I.leaf}<h1>מומחה התזונה</h1></div><p class="note">${t}</p></div>`}
+
+/* ---------- boot ---------- */
+async function boot(){
+  busyScreen();
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return renderLogin();
+  await loadMe();
+}
+async function loadMe(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user)return renderLogin();
+  const {data,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(error||!data){await sb.auth.signOut();return renderLogin('לא נמצא פרופיל למשתמש. פנה למנהל.')}
+  if(data.blocked){await sb.auth.signOut();return renderLogin('המשתמש חסום. פנה למנהל.')}
+  ME=data;
+  if(ME.must_change)return renderForceChange();
+  if(!ME.sex)return renderOnboarding();
+  await Promise.all([loadWeights(),loadGoal()]);
+  go(VIEW);
+}
+async function loadWeights(){const {data}=await sb.from('weights').select('kg,measured_at').eq('user_id',ME.id).order('measured_at');WEIGHTS=(data||[]).map(w=>({kg:+w.kg,d:new Date(w.measured_at).getTime()}))}
+async function loadGoal(){const {data}=await sb.from('goals').select('*').eq('user_id',ME.id).maybeSingle();GOAL=data}
+async function loadMsgs(){
+  const {data}=await sb.from('messages').select('*').eq('user_id',ME.id).order('created_at',{ascending:false}).limit(120);
+  MSGS=(data||[]).reverse();
+  const need=MSGS.filter(m=>m.image_path&&!PHOTO_URLS[m.image_path]).map(m=>m.image_path);
+  if(need.length){const {data:urls}=await sb.storage.from('meal-photos').createSignedUrls(need,3600);(urls||[]).forEach(u=>{if(u.signedUrl)PHOTO_URLS[u.path]=u.signedUrl})}
+}
+function go(v){VIEW=v;({chat:renderChat,progress:renderProgress,settings:renderSettings,admin:renderAdmin}[v]||renderChat)()}
+
+/* ---------- auth ---------- */
+const brand=()=>`<div class="brand">${I.leaf}<h1>מומחה התזונה</h1></div>`;
+function renderLogin(msg=''){
+  ME=null;
+  app.innerHTML=`<div class="auth">${brand()}<p class="tag">המלווה האישי שלך לתזונה, שזוכר אותך משיחה לשיחה.</p>
+  <form id="f" class="stack card">
+    <div class="field"><label for="lu">שם משתמש</label><input id="lu" dir="ltr" autocomplete="username" autocapitalize="none" required></div>
+    <div class="field"><label for="lp">סיסמה</label><input id="lp" type="password" dir="ltr" autocomplete="current-password" required></div>
+    <div class="err" id="e">${esc(msg)}</div>
+    <button class="btn" id="lb">כניסה</button>
+  </form>
+  <button class="btn ghost" id="toReg">קיבלתי קוד הזמנה</button>
+  <p class="note">שכחת סיסמה? פנה למנהל, והוא יאפס לך אותה.</p></div>`;
+  $('#toReg').onclick=renderRegister;
+  $('#f').onsubmit=async e=>{e.preventDefault();$('#lb').disabled=true;$('#e').textContent='';
+    const name=$('#lu').value.trim().toLowerCase();
+    const {error}=await sb.auth.signInWithPassword({email:`${name}@${EMAIL_DOMAIN}`,password:$('#lp').value});
+    if(error){$('#lb').disabled=false;$('#e').textContent=/banned/i.test(error.message)?'המשתמש חסום. פנה למנהל.':'שם המשתמש או הסיסמה לא נכונים.';return}
+    VIEW='chat';busyScreen();loadMe()};
+}
+function renderRegister(){
+  app.innerHTML=`<div class="auth">${brand()}<p class="tag">הרשמה בהזמנה בלבד. הכנס את הקוד שקיבלת.</p>
+  <form id="f" class="stack card">
+    <div class="field"><label for="rc">קוד הזמנה</label><input id="rc" dir="ltr" autocapitalize="characters" required></div>
+    <div class="field"><label for="ru">שם משתמש (אנגלית, 3 עד 20 תווים)</label><input id="ru" dir="ltr" autocapitalize="none" pattern="[a-zA-Z0-9_.]{3,20}" required></div>
+    <div class="field"><label for="rp">סיסמה (לפחות 6 תווים)</label><input id="rp" type="password" dir="ltr" minlength="6" autocomplete="new-password" required></div>
+    <div class="err" id="e"></div><button class="btn" id="rb">הרשמה</button></form>
+  <button class="btn quiet" id="back">חזרה לכניסה</button></div>`;
+  const q=new URLSearchParams(location.search).get('invite');if(q)$('#rc').value=q;
+  $('#back').onclick=()=>renderLogin();
+  $('#f').onsubmit=async e=>{e.preventDefault();$('#rb').disabled=true;$('#e').textContent='';
+    const username=$('#ru').value.trim().toLowerCase(),password=$('#rp').value;
+    try{await api('register',{code:$('#rc').value,username,password})}
+    catch(err){$('#rb').disabled=false;$('#e').textContent=err.message;return}
+    const {error}=await sb.auth.signInWithPassword({email:`${username}@${EMAIL_DOMAIN}`,password});
+    if(error)return renderLogin('נרשמת בהצלחה. היכנס עם השם והסיסמה שבחרת.');
+    history.replaceState(null,'',location.pathname);busyScreen();loadMe()};
+}
+function renderForceChange(){
+  app.innerHTML=`<div class="auth">${brand()}<p class="tag">המנהל איפס לך את הסיסמה. בחר סיסמה חדשה כדי להמשיך.</p>
+  <form id="f" class="stack card"><div class="field"><label for="np">סיסמה חדשה (לפחות 6 תווים)</label><input id="np" type="password" dir="ltr" minlength="6" autocomplete="new-password" required></div>
+  <div class="field"><label for="np2">שוב</label><input id="np2" type="password" dir="ltr" minlength="6" required></div><div class="err" id="e"></div><button class="btn">שמירה</button></form></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();if($('#np').value!==$('#np2').value){$('#e').textContent='הסיסמאות לא זהות.';return}
+    const {error}=await sb.auth.updateUser({password:$('#np').value});
+    if(error){$('#e').textContent='השמירה נכשלה: '+error.message;return}
+    await sb.from('profiles').update({must_change:false}).eq('id',ME.id);busyScreen();loadMe()};
+}
+
+/* ---------- onboarding ---------- */
+function personaPicker(cur){return `<div class="persona">${Object.entries(PERSONAS).map(([k,[n,d]])=>`<label><input type="radio" name="persona" value="${k}" ${k===cur?'checked':''}><span><b>${n}</b><small>${d}</small></span></label>`).join('')}</div>`}
+function renderOnboarding(){
+  app.innerHTML=`<div class="screen"><div class="brand">${I.leaf}<h1>נעים להכיר</h1></div>
+  <p class="tag">כמה פרטים כדי שהמומחה יענה לך באופן אישי. אפשר לשנות הכול אחר כך בהגדרות.</p>
+  <form id="f" class="stack">
+   <div class="card stack"><h3>עליך</h3>
+    <div class="row"><div class="field"><label for="sx">מין</label><select id="sx"><option value="m">זכר</option><option value="f">נקבה</option></select></div>
+    <div class="field"><label for="ag">גיל</label><input id="ag" type="number" min="18" max="110" required></div></div>
+    <div class="row"><div class="field"><label for="ht">גובה (ס"מ)</label><input id="ht" type="number" min="120" max="230" required></div>
+    <div class="field"><label for="wt">משקל (ק"ג)</label><input id="wt" type="number" step="0.1" min="30" max="300" required></div></div>
+    <div class="field"><label for="pf">העדפות (לא חובה)</label><input id="pf" placeholder="צמחוני, שומר כשרות, לא אוהב דגים..."></div></div>
+   <div class="card stack"><h3>איזה מומחה מתאים לך?</h3>${personaPicker('encouraging')}</div>
+   <div class="card stack"><h3>יעד</h3>
+    <label class="row" style="align-items:center;flex-wrap:nowrap;gap:.5rem"><input type="checkbox" id="letAi" style="flex:none;width:20px;height:20px" checked><span>נגדיר את היעד יחד עם המומחה בצ'אט</span></label>
+    <div class="row" id="gRow" hidden><div class="field"><label for="gk">משקל יעד (ק"ג)</label><input id="gk" type="number" step="0.1"></div>
+    <div class="field"><label for="gd">עד תאריך</label><input id="gd" type="date"></div></div></div>
+   <div class="err" id="e"></div><button class="btn" id="ob">יוצאים לדרך</button></form></div>`;
+  $('#letAi').onchange=e=>{$('#gRow').hidden=e.target.checked};
+  $('#f').onsubmit=async e=>{e.preventDefault();$('#ob').disabled=true;
+    const kg=+$('#wt').value;
+    const {error}=await sb.from('profiles').update({sex:$('#sx').value,age:+$('#ag').value,height_cm:+$('#ht').value,prefs:$('#pf').value.trim(),persona:$('[name=persona]:checked').value}).eq('id',ME.id);
+    if(error){$('#ob').disabled=false;$('#e').textContent='השמירה נכשלה: '+error.message;return}
+    await sb.from('weights').insert({user_id:ME.id,kg});
+    let first='שלום! סיימתי את מסך ההיכרות. בוא נגדיר יחד יעד שמתאים לי.';
+    if(!$('#letAi').checked&&$('#gk').value&&$('#gd').value){
+      await sb.from('goals').upsert({user_id:ME.id,target_kg:+$('#gk').value,target_date:$('#gd').value,start_kg:kg});
+      first=`שלום! סיימתי את מסך ההיכרות. היעד שלי: ${$('#gk').value} ק"ג עד ${$('#gd').value}. איך מתחילים?`}
+    VIEW='chat';await loadMe();send(first)};
+}
+
+/* ---------- top bar ---------- */
+function topBar(title,sub,{back=false}={}){
+  return `<div class="top">${back?`<button class="icon" id="tBack" aria-label="חזרה לצ'אט">${I.back}</button>`:''}
+  <h2>${title}${sub?` <small>${sub}</small>`:''}</h2>
+  ${back?'':`<button class="icon" data-go="progress" aria-label="התקדמות">${I.chart}</button><button class="icon" data-go="settings" aria-label="הגדרות">${I.gear}</button>${ME.role==='admin'?`<button class="icon" data-go="admin" aria-label="ניהול">${I.shield}</button>`:''}`}</div>`;
+}
+function wireTop(){$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));const t=$('#tBack');if(t)t.onclick=()=>go('chat')}
+
+/* ---------- chat ---------- */
+let pendingImg=null,busy=false;
+function bubble(m){
+  if(m.role==='sys')return `<div class="b sys">${esc(m.text)}</div>`;
+  const cls=m.role==='me'?'me':'ai'+(m.is_nudge?' nudge':'');
+  const img=m.image_path?(PHOTO_URLS[m.image_path]||m._local):null;
+  return `<div class="b ${cls}">${m.is_nudge?'<span class="who">פנייה מהמומחה</span>':''}${img?`<img src="${img}" alt="צילום ארוחה">`:''}${esc(m.text)}${m.log_note?`<span class="logged">נרשם ביומן: ${esc(m.log_note)}</span>`:''}</div>`;
+}
+async function renderChat(){
+  VIEW='chat';
+  if(!MSGS.length)await loadMsgs();
+  const w=lastW(),b=bmi();
+  app.innerHTML=`${topBar('המומחה',w&&b?`${w.kg} ק"ג · BMI ${b.toFixed(1)}`:'')}
+  <div class="msgs" id="msgs">${MSGS.map(bubble).join('')||'<div class="b sys">כתוב למומחה כדי להתחיל.</div>'}</div>
+  <div class="quick">${['מה לאכול לארוחת ערב?','תציע לי תפריט למחר','איך אני מתקדם?','בא לי מתוק, מה עושים?'].map(q=>`<button>${q}</button>`).join('')}</div>
+  <div id="pend"></div>
+  <form class="composer" id="cf">
+    <button type="button" class="icon" id="cam" aria-label="צילום ארוחה">${I.cam}</button>
+    <button type="button" class="weigh" id="wbtn">${I.scale}נשקלתי</button>
+    <textarea id="ct" rows="1" placeholder="כתוב למומחה..." aria-label="הודעה"></textarea>
+    <button class="icon" id="sendBtn" style="background:var(--accent);color:var(--accent-fg)" aria-label="שליחה">${I.send}</button>
+  </form>`;
+  wireTop();
+  const box=$('#msgs');box.scrollTop=box.scrollHeight;
+  $$('.quick button').forEach(b=>b.onclick=()=>send(b.textContent));
+  $('#cam').onclick=()=>$('#photoInput').click();
+  $('#wbtn').onclick=weighSheet;
+  const ta=$('#ct');ta.oninput=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px'};
+  ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!('ontouchstart' in window)){e.preventDefault();$('#cf').requestSubmit()}};
+  $('#cf').onsubmit=e=>{e.preventDefault();send(ta.value)};
+  if(busy){$('#sendBtn').disabled=true;thinking()}
+  showPending();
+}
+function thinking(){const box=$('#msgs');if(!box||$('#think'))return;const el=document.createElement('div');el.id='think';el.className='b ai';el.textContent='המומחה חושב...';box.appendChild(el);box.scrollTop=box.scrollHeight}
+function showPending(){const p=$('#pend');if(!p)return;p.innerHTML=pendingImg?`<div class="pending"><img src="${pendingImg.url}" alt=""><span>הצילום יישלח עם ההודעה הבאה</span><button class="btn quiet sm" id="rmImg">הסר</button></div>`:'';
+  if(pendingImg)$('#rmImg').onclick=()=>{pendingImg=null;showPending()}}
+$('#photoInput').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(f)});
+  const s=Math.min(1,1024/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));
+  pendingImg={url:URL.createObjectURL(blob),blob};showPending();
+  const ta=$('#ct');if(ta&&!ta.value)ta.placeholder='מה יש בצלחת? (לא חובה)';}
+  catch(err){alertSys('לא הצלחתי לפתוח את התמונה. נסה צילום אחר.')}};
+function alertSys(t){MSGS.push({role:'sys',text:t});if(VIEW==='chat')renderChat()}
+async function send(text){
+  text=(text||'').trim();if(busy||(!text&&!pendingImg))return;
+  busy=true;const img=pendingImg;pendingImg=null;
+  let image_path=null;
+  if(img){image_path=`${ME.id}/${Date.now()}.jpg`;
+    const {error}=await sb.storage.from('meal-photos').upload(image_path,img.blob,{contentType:'image/jpeg'});
+    if(error){busy=false;pendingImg=img;return alertSys('העלאת התמונה נכשלה. נסה שוב.')}
+    PHOTO_URLS[image_path]=img.url}
+  MSGS.push({role:'me',text:text||'מה דעתך על הארוחה הזו?',image_path});
+  if(VIEW==='chat')renderChat();
+  try{const r=await api('chat',{text,image_path});
+    if(r.goal)await loadGoal();}
+  catch(err){MSGS.push({role:'sys',text:err.message})}
+  busy=false;
+  const keep=MSGS.filter(m=>m.role==='sys'&&!m.id);
+  await loadMsgs();MSGS.push(...keep);
+  if(VIEW==='chat')renderChat();
+}
+function weighSheet(){
+  const w=lastW();
+  const bg=document.createElement('div');bg.className='sheet-bg';
+  bg.innerHTML=`<form class="sheet" id="wf" dir="rtl"><h2>עדכון משקל</h2>
+   <div class="field"><label for="wk">משקל היום (ק"ג)</label><input id="wk" type="number" inputmode="decimal" step="0.1" min="30" max="300" value="${w?w.kg:''}" required></div>
+   <div class="acts"><button class="btn">שמירה</button><button type="button" class="btn quiet" id="wx">ביטול</button></div></form>`;
+  document.body.appendChild(bg);const inp=$('#wk');inp.focus();inp.select();
+  const close=()=>bg.remove();$('#wx').onclick=close;bg.onclick=e=>{if(e.target===bg)close()};
+  $('#wf').onsubmit=async e=>{e.preventDefault();const kg=+inp.value;const prev=lastW();
+    const {error}=await sb.from('weights').insert({user_id:ME.id,kg});
+    close();if(error)return alertSys('שמירת המשקל נכשלה. נסה שוב.');
+    await loadWeights();
+    const diff=prev?kg-prev.kg:0;
+    send(`נשקלתי עכשיו: ${kg} ק"ג${prev?` (${diff>0?'+':''}${diff.toFixed(1)} מהשקילה הקודמת)`:''}.`)};
+}
+
+/* ---------- progress ---------- */
+function chartSVG(ws,goal){
+  if(ws.length<2)return `<p class="note">אחרי שתי שקילות יופיע כאן גרף.</p>`;
+  const W=600,H=220,pl=40,pr=12,pt=14,pb=28;
+  const ks=ws.map(x=>x.kg).concat(goal?[+goal.target_kg]:[]);const lo=Math.floor(Math.min(...ks)-1),hi=Math.ceil(Math.max(...ks)+1);
+  const t0=ws[0].d,t1=ws[ws.length-1].d;
+  const X=t=>W-pr-((t-t0)/((t1-t0)||1))*(W-pl-pr);
+  const Y=k=>pt+(hi-k)/(hi-lo)*(H-pt-pb);
+  const pts=ws.map(x=>[X(x.d),Y(x.kg)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=line+` L${pts[pts.length-1][0].toFixed(1)} ${H-pb} L${pts[0][0].toFixed(1)} ${H-pb} Z`;
+  const step=Math.max(1,Math.ceil((hi-lo)/4));let grid='';
+  for(let k=lo;k<=hi;k+=step)grid+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(k)}" y2="${Y(k)}" stroke="var(--line)"/><text x="${pl-6}" y="${Y(k)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${k}</text>`;
+  const last=pts[pts.length-1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="גרף משקל">${grid}
+   ${goal?`<line x1="${pl}" x2="${W-pr}" y1="${Y(goal.target_kg)}" y2="${Y(goal.target_kg)}" stroke="var(--accent)" stroke-dasharray="5 5"/><text x="${W-pr}" y="${Y(goal.target_kg)-5}" text-anchor="end" font-size="12" fill="var(--accent)">יעד ${goal.target_kg}</text>`:''}
+   <path d="${area}" fill="var(--accent)" opacity=".12"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+   <circle cx="${last[0]}" cy="${last[1]}" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+   <text x="${W-pr}" y="${H-8}" text-anchor="end" font-size="12" fill="var(--muted)">${fmtD(t0)}</text><text x="${pl}" y="${H-8}" font-size="12" fill="var(--muted)">${fmtD(t1)}</text></svg>`;
+}
+async function renderProgress(){
+  VIEW='progress';
+  const w=lastW(),b=bmi();
+  if(!w||!b){app.innerHTML=`${topBar('התקדמות','',{back:true})}<div class="screen"><p class="note">עדיין אין שקילות.</p></div>`;return wireTop()}
+  const [cat,cc]=bmiCat(b),g=GOAL;
+  let goalHtml=`<div class="card stack"><h3>יעד</h3><p class="note">עדיין אין יעד. אפשר להגדיר אותו יחד עם המומחה בצ'אט, או בהגדרות.</p></div>`;
+  if(g){
+    const start=+(g.start_kg??WEIGHTS[0].kg),target=+g.target_kg,total=start-target,done=start-w.kg,pct=total?Math.max(0,Math.min(100,done/total*100)):100;
+    const weeks=Math.max(.1,(new Date(g.target_date)-Date.now())/6048e5),left=w.kg-target,perW=left/weeks,fast=Math.abs(perW)>1;
+    goalHtml=`<div class="card stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap"><h3>יעד: ${target} ק"ג</h3><span class="chip">עד ${fmtFull(g.target_date)}</span></div>
+     <div class="bar" aria-label="התקדמות ליעד"><i style="width:${pct}%"></i></div>
+     <p class="num">${done>=0?`עברת ${done.toFixed(1)}`:`עלית ${(-done).toFixed(1)}`} ק"ג מתוך ${Math.abs(total).toFixed(1)} · נשארו ${Math.abs(left).toFixed(1)} ק"ג</p>
+     <div class="goals num"><div><b>${Math.abs(perW).toFixed(2)}</b><span>ק"ג לשבוע</span></div><div><b>${Math.abs(perW*4.3).toFixed(1)}</b><span>ק"ג לחודש</span></div><div><b>${Math.ceil(weeks)}</b><span>שבועות נותרו</span></div></div>
+     ${fast?`<span class="chip warn">הקצב הנדרש גבוה מ-1 ק"ג לשבוע. כדאי להאריך את התאריך.</span>`:`<span class="chip good">קצב בריא ובר-השגה</span>`}</div>`;
+  }
+  app.innerHTML=`${topBar('התקדמות','',{back:true})}<div class="screen">
+   <div class="stats num"><div class="stat"><b>${w.kg}</b><span>ק"ג עכשיו</span></div><div class="stat"><b>${b.toFixed(1)}</b><span>BMI · <span class="chip ${cc}">${cat}</span></span></div><div class="stat"><b>${WEIGHTS.length}</b><span>שקילות</span></div></div>
+   <div class="card stack"><h3>משקל לאורך זמן</h3>${chartSVG(WEIGHTS,g)}</div>
+   ${goalHtml}
+   <div class="card stack" id="food"><h3>יומן אוכל, 24 שעות אחרונות</h3><p class="note">טוען...</p></div>
+  </div>`;
+  wireTop();
+  const {data}=await sb.from('food_log').select('text,kcal,created_at').eq('user_id',ME.id).gte('created_at',new Date(Date.now()-864e5).toISOString()).order('created_at');
+  const f=$('#food');if(!f)return;
+  f.innerHTML=`<h3>יומן אוכל, 24 שעות אחרונות</h3>`+((data||[]).length?`<ul style="margin:0;padding-inline-start:1.2rem">${data.map(x=>`<li>${esc(x.text)} <span class="note num">כ-${x.kcal} קק"ל</span></li>`).join('')}</ul><p class="num"><b>סה"כ כ-${data.reduce((a,x)=>a+(x.kcal||0),0)} קלוריות</b></p>`:'<p class="note">ספר למומחה מה אכלת או צלם ארוחה, והיא תירשם כאן.</p>');
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  VIEW='settings';const n=ME.nudge||{enabled:true,days:[],times:[]};
+  app.innerHTML=`${topBar('הגדרות','',{back:true})}<form class="screen" id="sf">
+   <div class="card stack"><h3>אופי המומחה</h3>${personaPicker(ME.persona)}</div>
+   <div class="card stack"><h3>פניות יזומות של המומחה</h3>
+    <label class="row" style="align-items:center;flex-wrap:nowrap;gap:.5rem"><input type="checkbox" id="ne" style="flex:none;width:20px;height:20px" ${n.enabled?'checked':''}><span>המומחה יכול לפנות אליי ביוזמתו</span></label>
+    <div class="field"><label>באילו ימים</label><div class="days">${DAYN.map((d,i)=>`<label><input type="checkbox" class="nd" value="${i}" ${n.days.includes(i)?'checked':''}><span>${d}</span></label>`).join('')}</div></div>
+    <div class="field"><label>שעות (כמה פעמים ביום)</label><div id="times" class="row">${n.times.map((t,i)=>`<input type="time" class="nt" id="nt${i}" value="${t}" style="flex:0 1 120px">`).join('')}</div>
+    <div class="row" style="flex-wrap:nowrap"><button type="button" class="btn quiet sm" id="addT" style="flex:none">הוסף שעה</button><button type="button" class="btn quiet sm" id="rmT" style="flex:none">הסר שעה</button></div></div>
+    <p class="note">הפנייה מגיעה לצ'אט בשעה שנקבעה (בדיוק של עד שעה).</p></div>
+   <div class="card stack"><h3>פרופיל</h3>
+    <div class="row"><div class="field"><label for="ssx">מין</label><select id="ssx"><option value="m" ${ME.sex==='m'?'selected':''}>זכר</option><option value="f" ${ME.sex==='f'?'selected':''}>נקבה</option></select></div>
+    <div class="field"><label for="sag">גיל</label><input id="sag" type="number" min="18" max="110" value="${ME.age}"></div><div class="field"><label for="sht">גובה (ס"מ)</label><input id="sht" type="number" min="120" max="230" value="${ME.height_cm}"></div></div>
+    <div class="field"><label for="spf">העדפות</label><input id="spf" value="${esc(ME.prefs)}"></div>
+    <div class="row"><div class="field"><label for="sgk">משקל יעד (ק"ג)</label><input id="sgk" type="number" step="0.1" value="${GOAL?.target_kg??''}"></div>
+    <div class="field"><label for="sgd">תאריך יעד</label><input id="sgd" type="date" value="${GOAL?.target_date??''}"></div></div></div>
+   <div class="card stack"><h3>שינוי סיסמה</h3><div class="field"><label for="snp">סיסמה חדשה (השאר ריק כדי לא לשנות)</label><input id="snp" type="password" dir="ltr" minlength="6" autocomplete="new-password"></div></div>
+   <div class="err" id="e"></div>
+   <div class="row" style="flex-wrap:nowrap"><button class="btn" id="sv">שמירה</button><button type="button" class="btn ghost" id="out">יציאה</button></div>
+   <p class="note">מחובר כ-<span dir="ltr">${esc(ME.username)}</span></p></form>`;
+  wireTop();
+  $('#addT').onclick=()=>{const c=$('#times').children.length;if(c>=5)return;$('#times').insertAdjacentHTML('beforeend',`<input type="time" class="nt" id="nt${c}" value="13:00" style="flex:0 1 120px">`)};
+  $('#rmT').onclick=()=>{const t=$('#times');if(t.children.length>1)t.lastElementChild.remove()};
+  $('#out').onclick=async()=>{await sb.auth.signOut();MSGS=[];WEIGHTS=[];GOAL=null;VIEW='chat';renderLogin()};
+  $('#sf').onsubmit=async e=>{e.preventDefault();const E=$('#e');E.style.color='';E.textContent='';$('#sv').disabled=true;
+    const upd={persona:$('[name=persona]:checked').value,
+      nudge:{enabled:$('#ne').checked,days:$$('.nd:checked').map(x=>+x.value),times:$$('.nt').map(x=>x.value).filter(Boolean).sort()},
+      sex:$('#ssx').value,age:+$('#sag').value,height_cm:+$('#sht').value,prefs:$('#spf').value.trim()};
+    const {error}=await sb.from('profiles').update(upd).eq('id',ME.id);
+    if(error){$('#sv').disabled=false;E.textContent='השמירה נכשלה: '+error.message;return}
+    Object.assign(ME,upd);
+    if($('#sgk').value&&$('#sgd').value){const tk=+$('#sgk').value,td=$('#sgd').value;
+      if(!GOAL||+GOAL.target_kg!==tk||GOAL.target_date!==td){
+        await sb.from('goals').upsert({user_id:ME.id,target_kg:tk,target_date:td,start_kg:lastW()?.kg??null,start_date:new Date().toISOString(),updated_at:new Date().toISOString()});await loadGoal()}}
+    if($('#snp').value){const {error:pe}=await sb.auth.updateUser({password:$('#snp').value});if(pe){$('#sv').disabled=false;E.textContent='שינוי הסיסמה נכשל: '+pe.message;return}$('#snp').value=''}
+    $('#sv').disabled=false;E.style.color='var(--good)';E.textContent='נשמר.'};
+}
+
+/* ---------- admin ---------- */
+let confirmDel=null,shownTemp={},modelResults=null,usage=null;
+async function renderAdmin(){
+  VIEW='admin';if(ME.role!=='admin')return go('chat');
+  const [{data:users},{data:invites}]=await Promise.all([
+    sb.from('profiles').select('id,username,role,blocked,must_change,sex,created_at').order('created_at'),
+    sb.from('invites').select('*').is('used_by',null).order('created_at',{ascending:false})]);
+  const link=c=>`${location.origin}${location.pathname}?invite=${c}`;
+  const modelRows=(usage?.models||[]).map((m,i)=>{const r=modelResults?.find(x=>x.model===m),s=usage.stats?.[m]||{ok:0,fail:0};
+    return `<li><span dir="ltr" style="min-width:0;overflow-wrap:anywhere">${i+1}. ${esc(m)}</span><span style="display:flex;gap:.3rem;flex:none"><span class="chip num" title="הצלחות / כישלונות ב-7 ימים">${s.ok}/${s.fail}</span>${r?`<span class="chip ${r.ok?'good':'bad'}" title="${esc(r.error||'')}">${r.ok?'עובד':'לא עובד'}</span>`:''}</span></li>`}).join('');
+  app.innerHTML=`${topBar('ניהול','',{back:true})}<div class="screen">
+   <div class="card stack"><h3>הזמנת משתמש</h3><p class="note">צור קוד, ושלח את הקישור בווטסאפ. כל קוד טוב להרשמה אחת.</p>
+    <div><button class="btn" id="inv">צור הזמנה</button></div>
+    ${(invites||[]).length?`<div class="stack" style="gap:.6rem">${invites.map(i=>`<div class="stack" style="gap:.3rem"><span class="code" style="overflow-wrap:anywhere">${esc(link(i.code))}</span><div class="row" style="flex-wrap:nowrap"><button class="btn quiet sm" style="flex:none" data-copy="${esc(link(i.code))}">העתק קישור</button><button class="btn quiet sm" style="flex:none" data-cancel="${esc(i.code)}">בטל</button>${i.role==='admin'?'<span class="chip warn" style="flex:none">קוד מנהל</span>':''}</div></div>`).join('')}</div>`:''}</div>
+   <div class="card stack"><h3>משתמשים (${(users||[]).length})</h3><div class="ulist">${(users||[]).map(x=>`<div class="urow card" style="background:var(--bg)">
+     <div class="head"><b dir="ltr">${esc(x.username)}</b><span>${x.role==='admin'?'<span class="chip good">מנהל</span> ':''}${x.blocked?'<span class="chip bad">חסום</span> ':''}${x.must_change?'<span class="chip warn">ממתין לסיסמה חדשה</span>':''}</span></div>
+     <p class="note num">נרשם ${fmtFull(x.created_at)} · ${x.sex?'השלים היכרות':'טרם השלים היכרות'}</p>
+     ${shownTemp[x.id]?`<p>סיסמה זמנית: <span class="code">${esc(shownTemp[x.id])}</span> <span class="note">(שלח לו אותה; הוא יתבקש להחליף)</span></p>`:''}
+     ${x.id===ME.id?'':confirmDel===x.id?`<div class="stack" style="gap:.5rem"><p class="err">למחוק לצמיתות את ${esc(x.username)} וכל הנתונים שלו? אי אפשר לשחזר.</p><div class="acts"><button class="btn danger sm" data-del="${x.id}">כן, למחוק</button><button class="btn quiet sm" data-nodel>ביטול</button></div></div>`:
+     `<div class="acts"><button class="btn quiet sm" data-reset="${x.id}">איפוס סיסמה</button><button class="btn quiet sm" data-block="${x.id}" data-b="${x.blocked?0:1}">${x.blocked?'ביטול חסימה':'חסימה'}</button><button class="btn quiet sm" data-askdel="${x.id}" style="color:var(--bad)">מחיקה מלאה</button></div>`}</div>`).join('')}</div></div>
+   <div class="card stack"><h3>מודלי AI</h3><p class="note">שרשרת הגיבוי לפי הסדר. המספרים: הצלחות/כישלונות ב-7 ימים אחרונים.</p>
+    <ul class="models">${modelRows||'<li><span class="note">טוען...</span></li>'}</ul>
+    <div><button class="btn ghost" id="testAi">בדוק את כל מודלי ה-AI</button></div><div class="err" id="ae"></div></div>
+  </div>`;
+  wireTop();
+  const act=async(fn)=>{try{await fn()}catch(err){alert0(err.message)}};
+  const alert0=t=>{const e=$('#ae');if(e)e.textContent=t};
+  $('#inv').onclick=()=>act(async()=>{const c=Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
+    const {error}=await sb.from('invites').insert({code:c,created_by:ME.id});if(error)throw error;renderAdmin()});
+  $$('[data-copy]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent='הועתק'}catch(e){b.textContent='סמן והעתק'}});
+  $$('[data-cancel]').forEach(b=>b.onclick=()=>act(async()=>{await sb.from('invites').delete().eq('code',b.dataset.cancel);renderAdmin()}));
+  $$('[data-reset]').forEach(b=>b.onclick=()=>act(async()=>{b.disabled=true;const r=await api('admin_reset',{user_id:b.dataset.reset});shownTemp[b.dataset.reset]=r.temp;renderAdmin()}));
+  $$('[data-block]').forEach(b=>b.onclick=()=>act(async()=>{b.disabled=true;await api('admin_block',{user_id:b.dataset.block,blocked:b.dataset.b==='1'});renderAdmin()}));
+  $$('[data-askdel]').forEach(b=>b.onclick=()=>{confirmDel=b.dataset.askdel;renderAdmin()});
+  $$('[data-nodel]').forEach(b=>b.onclick=()=>{confirmDel=null;renderAdmin()});
+  $$('[data-del]').forEach(b=>b.onclick=()=>act(async()=>{b.disabled=true;await api('admin_delete',{user_id:b.dataset.del});confirmDel=null;renderAdmin()}));
+  $('#testAi').onclick=()=>act(async()=>{const t=$('#testAi');t.disabled=true;t.textContent='בודק... (עד דקה)';const r=await api('admin_test_models');modelResults=r.results;usage=await api('admin_usage');renderAdmin()});
+  if(!usage){try{usage=await api('admin_usage');if(VIEW==='admin')renderAdmin()}catch(err){alert0(err.message)}}
+}
+
+/* ---------- refresh on return (nudges) ---------- */
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||!ME||busy||VIEW!=='chat')return;
+  const before=MSGS.length;await loadMsgs();if(MSGS.length!==before)renderChat();
+});
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&ME){ME=null;renderLogin()}});
+
+boot();
+
+</script>
+</body>
+</html>
